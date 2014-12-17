@@ -1,0 +1,9 @@
+group("All") {
+  deps = [ "//src:mock_network" ]
+}
+
+if (config_for_tests) {
+  group("Tests") {
+    deps = []
+  }
+}

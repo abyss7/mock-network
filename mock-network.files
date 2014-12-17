@@ -1,0 +1,8 @@
+build/config/linux/BUILD.gn
+build/config/BUILD.gn
+build/config/BUILDCONFIG.gn
+build/toolchain/linux/BUILD.gn
+build/version.py
+src/BUILD.gn
+src/main.cc
+BUILD.gn

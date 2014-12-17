@@ -1,0 +1,53 @@
+config("base") {
+  cflags = [
+    "-fPIC",
+    "-pipe",
+    "-pthread",
+    "-Wall",
+    "-Wsign-compare",
+    "-Wno-unknown-warning-option",
+    "-Wno-error=assume",
+    "-Wno-error=unused-command-line-argument",
+    "-Werror",
+  ]
+
+  cflags_cc = [
+    "-std=c++1y",
+  ]
+
+  include_dirs = [ "//src" ]
+}
+
+config("debug") {
+  cflags = [
+    "-g",
+    "-O0",
+  ]
+
+  defines = [ "_DEBUG" ]
+}
+
+config("release") {
+  cflags = [
+    "-fomit-frame-pointer",
+    "-O3",
+  ]
+
+  defines = [ "NDEBUG" ]
+
+  ldflags = [ "-rpath", "/usr/lib/dist-clang" ]
+}
+
+config("no_exceptions") {
+  cflags_cc = [ "-fno-exceptions" ]
+  ldflags = [ "-fno-exceptions" ]
+}
+
+config("no_rtti") {
+  cflags_cc = [ "-fno-rtti" ]
+  ldflags = [ "-fno-rtti" ]
+}
+
+config("version") {
+  defines = [ "VERSION=\"$version\"" ]
+}

@@ -1,0 +1,3 @@
+shared_library("mock_network") {
+  sources = [ "main.cc" ]
+}

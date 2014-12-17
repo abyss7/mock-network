@@ -1,0 +1,11 @@
+config("base") {
+  defines = [
+    "OS_LINUX",
+  ]
+
+  ldflags = [
+    "--no-undefined",
+    "-rdynamic",      # for |backtrace()|
+    "-rpath", "\$ORIGIN",
+  ]
+}
