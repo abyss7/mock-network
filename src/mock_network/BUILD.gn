@@ -1,0 +1,30 @@
+shared_library("mock_network") {
+  sources = [
+    "connect.cc",
+    "connect.h",
+    "functions.cc",
+    "functions.h",
+    "mock.cc",
+    "mock.h",
+    "socket.cc",
+    "socket.h",
+  ]
+
+  public = [
+    "connect.h",
+    "mock.h",
+  ]
+
+  deps += [ "//src/third_party/elf_hook:elf_hook" ]
+
+  libs = [ "dl" ]
+}
+
+shared_library("test_library") {
+  testonly = true
+
+  sources = [
+    "test_library.cc",
+    "test_library.h",
+  ]
+}

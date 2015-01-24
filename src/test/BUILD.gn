@@ -1,0 +1,16 @@
+executable("unit_tests") {
+  testonly = true
+
+  sources = [
+    "//src/mock_network/mock_test.cc",
+    "run_all_tests.cc",
+  ]
+
+  public = []
+
+  deps = [
+    "//src/mock_network:mock_network",
+    "//src/mock_network:test_library",
+    "//src/third_party/gtest:gtest",
+  ]
+}

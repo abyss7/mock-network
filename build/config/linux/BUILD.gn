@@ -5,6 +5,7 @@ config("base") {
 
   ldflags = [
     "--no-undefined",
+    "-pthread",
     "-rdynamic",      # for |backtrace()|
     "-rpath", "\$ORIGIN",
   ]

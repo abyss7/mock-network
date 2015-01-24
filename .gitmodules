@@ -1,0 +1,3 @@
+[submodule "src/third_party/elf_hook/exported"]
+	path = src/third_party/elf_hook/exported
+	url = https://github.com/shoumikhin/ELF-Hook.git

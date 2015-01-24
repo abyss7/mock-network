@@ -1,9 +1,11 @@
 group("All") {
-  deps = [ "//src:mock_network" ]
+  deps = [ "//src/mock_network:mock_network" ]
 }
 
 if (config_for_tests) {
   group("Tests") {
-    deps = []
+    testonly = true
+
+    deps = [ "//src/test:unit_tests" ]
   }
 }

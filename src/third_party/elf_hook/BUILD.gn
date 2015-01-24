@@ -1,0 +1,17 @@
+config("warnings") {
+  cflags = [
+    "-Wno-unused-function",
+    "-Wno-unused-variable",
+  ]
+}
+
+shared_library("elf_hook") {
+  sources = [
+    "exported/elf_hook.c",
+    "exported/elf_hook.h",
+  ]
+
+  configs += [ ":warnings" ]
+
+  libs = [ "dl" ]
+}
