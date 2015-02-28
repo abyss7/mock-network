@@ -42,17 +42,12 @@ LinkList GetLoadedModules() {
   return std::move(modules);
 }
 
-const char* blacklist[] = {
-    // Old libstdc++ doesn't support substring regex matching.
-    ".*ld-linux-x86-64\\.so.*", ".*libc\\.so.*", ".*libpthread\\.so.*",
-};
-
 Map<String, void*> handles;
 
 }  // namespace
 
 // static
-bool Mock::Enable(String* error) {
+bool Mock::Enable(const List<String>& whitelist, String* error) {
   UniqueLock lock(mutex_);
 
   if (enabled_) {
@@ -67,14 +62,14 @@ bool Mock::Enable(String* error) {
   LinkList modules = GetLoadedModules();
 
   for (const auto& handle : modules) {
-    bool in_blacklist = false;
-    for (const auto* entry : blacklist) {
+    bool in_whitelist = false;
+    for (const auto& entry : whitelist) {
       if (std::regex_match(handle->l_name, std::regex(entry))) {
-        in_blacklist = true;
+        in_whitelist = true;
         break;
       }
     }
-    if (in_blacklist) {
+    if (!in_whitelist) {
       continue;
     }
 
@@ -151,6 +146,7 @@ bool Mock::Disable(String* error) {
 
   // NOTE: |elf_hook()| uses the |close()| internally, so we need to be able to
   //       call the |CallOriginal()|, which asserts the |enabled_|.
+  // FIXME: looks like deprecated NOTE.
   enabled_ = false;
 
   return true;

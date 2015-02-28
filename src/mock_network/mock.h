@@ -17,7 +17,7 @@ class Mock {
     return reinterpret_cast<R (*)(Args...)>(original->second)(args...);
   }
 
-  static bool Enable(String* error = nullptr);
+  static bool Enable(const List<String>& whitelist, String* error = nullptr);
   static bool Disable(String* error = nullptr);
 
  private:

@@ -54,6 +54,9 @@ int connect(int sockfd, const struct sockaddr* addr, socklen_t addrlen) {
 
   if (!socket.SetState(Socket::CONNECTING, addr, addrlen)) {
     // Assume |errno| is already set by |Socket::SetState()|.
+    if (Connection::result_ != 0) {
+      errno = Connection::result_;
+    }
     return -1;
   }
 

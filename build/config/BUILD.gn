@@ -12,6 +12,7 @@ config("base") {
   ]
 
   cflags_cc = [
+    "-fdef-sized-delete",
     "-std=c++1y",
   ]
 

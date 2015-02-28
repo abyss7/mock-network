@@ -12,7 +12,7 @@ namespace mock_network {
 
 TEST(MockNetworkTest, Socket) {
   String error;
-  ASSERT_TRUE(Mock::Enable(&error)) << error;
+  ASSERT_TRUE(Mock::Enable({".*libtest_library\\.so"}, &error)) << error;
 
   int socket = test::socket(AF_UNIX, SOCK_STREAM, 0);
   EXPECT_NE(-1, socket);
@@ -43,7 +43,7 @@ TEST(MockNetworkTest, Socket) {
 
 TEST(MockNetworkTest, Connect) {
   String error;
-  ASSERT_TRUE(Mock::Enable(&error)) << error;
+  ASSERT_TRUE(Mock::Enable({".*libtest_library\\.so"}, &error)) << error;
 
   // Unknown socket.
   EXPECT_EQ(-1, test::connect(1, nullptr, 0));
@@ -84,7 +84,7 @@ TEST(MockNetworkTest, Connect) {
 
 TEST(MockNetworkTest, Bind) {
   String error;
-  ASSERT_TRUE(Mock::Enable(&error)) << error;
+  ASSERT_TRUE(Mock::Enable({".*libtest_library\\.so"}, &error)) << error;
 
   // Unknown socket.
   EXPECT_EQ(-1, test::bind(1, nullptr, 0));
