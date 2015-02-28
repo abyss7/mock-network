@@ -10,9 +10,6 @@
 
 namespace mock_network {
 
-// Used in the fake |close()|.
-Map<String, void*> originals;
-
 namespace {
 
 struct link_map_unloader {
@@ -45,34 +42,34 @@ LinkList GetLoadedModules() {
   return std::move(modules);
 }
 
-Atomic<bool> enabled = {false};
-
-#define REPLACE(func)                                     \
-  originals.emplace(#func,                                \
-                    elf_hook(handle->l_name, base, #func, \
-                             reinterpret_cast<const void*>(fake::func)))
-
 const char* blacklist[] = {
-    "ld-linux-x86-64\\.so", "libc\\.so", "libpthread\\.so",
+    // Old libstdc++ doesn't support substring regex matching.
+    ".*ld-linux-x86-64\\.so.*", ".*libc\\.so.*", ".*libpthread\\.so.*",
 };
+
+Map<String, void*> handles;
 
 }  // namespace
 
-bool Enable(String* error) {
-  bool expected = false;
-  if (!enabled.compare_exchange_strong(expected, true)) {
+// static
+bool Mock::Enable(String* error) {
+  UniqueLock lock(mutex_);
+
+  if (enabled_) {
     if (error) {
       error->assign("Mocking is already enabled");
     }
     return false;
   }
 
+  enabled_ = true;
+
   LinkList modules = GetLoadedModules();
 
-  for (auto& handle : modules) {
+  for (const auto& handle : modules) {
     bool in_blacklist = false;
     for (const auto* entry : blacklist) {
-      if (std::regex_search(handle->l_name, std::regex(entry))) {
+      if (std::regex_match(handle->l_name, std::regex(entry))) {
         in_blacklist = true;
         break;
       }
@@ -93,25 +90,79 @@ bool Enable(String* error) {
       return false;
     }
 
-    REPLACE(close);
-    REPLACE(connect);
-    REPLACE(socket);
+#define MOCK(func)                                                        \
+  {                                                                       \
+    void* original = elf_hook(handle->l_name, base, #func,                \
+                              reinterpret_cast<const void*>(fake::func)); \
+    if (original) {                                                       \
+      originals_.emplace(#func, original);                                \
+    }                                                                     \
+  }
+
+    MOCK(accept);
+    MOCK(bind);
+    MOCK(close);
+    MOCK(connect);
+    MOCK(listen);
+    MOCK(setsockopt);
+    MOCK(socket);
+
+#undef MOCK
+
+    handles.emplace(handle->l_name, base);
   }
 
   return true;
 }
 
-bool Disable(String* error) {
-  bool expected = true;
-  if (!enabled.compare_exchange_strong(expected, false)) {
+// static
+bool Mock::Disable(String* error) {
+  UniqueLock lock(mutex_);
+
+  if (!enabled_) {
     if (error) {
       error->assign("Mocking is not enabled");
     }
     return false;
   }
 
-  // TODO: implement this.
+  for (const auto& handle : handles) {
+#define RESTORE(func)                                                         \
+  {                                                                           \
+    auto original = originals_.find(#func);                                   \
+    if (original != originals_.end()) {                                       \
+      elf_hook(handle.first.c_str(), handle.second, #func, original->second); \
+    }                                                                         \
+  }
+
+    RESTORE(accept);
+    RESTORE(bind);
+    RESTORE(close);
+    RESTORE(connect);
+    RESTORE(listen);
+    RESTORE(setsockopt);
+    RESTORE(socket);
+
+#undef RESTORE
+  }
+
+  originals_.clear();
+  handles.clear();
+
+  // NOTE: |elf_hook()| uses the |close()| internally, so we need to be able to
+  //       call the |CallOriginal()|, which asserts the |enabled_|.
+  enabled_ = false;
+
   return true;
 }
+
+// static
+Mutex Mock::mutex_;
+
+// static
+bool Mock::enabled_ = false;
+
+// static
+Map<String, void*> Mock::originals_;
 
 }  // namespace mock_network

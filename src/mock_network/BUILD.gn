@@ -1,7 +1,7 @@
 shared_library("mock_network") {
   sources = [
-    "connect.cc",
-    "connect.h",
+    "connection.cc",
+    "connection.h",
     "functions.cc",
     "functions.h",
     "mock.cc",
@@ -11,7 +11,7 @@ shared_library("mock_network") {
   ]
 
   public = [
-    "connect.h",
+    "connection.h",
     "mock.h",
   ]
 

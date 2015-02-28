@@ -1,5 +1,7 @@
 #include <mock_network/functions.h>
 
+#include <mock_network/connection.h>
+#include <mock_network/mock.h>
 #include <mock_network/socket.h>
 
 #include <thread>
@@ -8,12 +10,29 @@
 #include <unistd.h>
 
 namespace mock_network {
-
-extern std::chrono::seconds connection_duration;
-extern int connection_result;
-extern Map<String, void*> originals;
-
 namespace fake {
+
+int accept(int sockfd, struct sockaddr* addr, socklen_t* addrlen) {
+  // TODO: implement this.
+  return -1;
+}
+
+int bind(int sockfd, const struct sockaddr* addr, socklen_t addrlen) {
+  Socket socket = Socket::Get(sockfd);
+  if (!socket.IsValid()) {
+    // We can't detect, if the |sockfd| is a valid descriptor at a system level,
+    // so we always indicate that it's just not a socket.
+    errno = ENOTSOCK;
+    return -1;
+  }
+
+  if (!socket.SetState(Socket::BIND, addr, addrlen)) {
+    // Assume |errno| is already set by |Socket::SetState()|.
+    return -1;
+  }
+
+  return 0;
+}
 
 int close(int fd) {
   Socket socket = Socket::Get(fd);
@@ -21,7 +40,7 @@ int close(int fd) {
     return socket.Close();
   }
 
-  return reinterpret_cast<int (*)(int)>(originals["close"])(fd);
+  return Mock::CallOriginal<int>("close", fd);
 }
 
 int connect(int sockfd, const struct sockaddr* addr, socklen_t addrlen) {
@@ -33,32 +52,52 @@ int connect(int sockfd, const struct sockaddr* addr, socklen_t addrlen) {
     return -1;
   }
 
-  if (!socket.SetState(Socket::CONNECTING)) {
-    if (socket.GetState() == Socket::CONNECTING) {
-      errno = EALREADY;
-    } else if (socket.GetState() >= Socket::CONNECTED) {
-      errno = EISCONN;
-    }
-
+  if (!socket.SetState(Socket::CONNECTING, addr, addrlen)) {
+    // Assume |errno| is already set by |Socket::SetState()|.
     return -1;
   }
 
   if (!socket.IsNonBlocking()) {
-    std::this_thread::sleep_for(connection_duration);
-    // TODO: handle peer address.
-    socket.SetState(Socket::CONNECTED);
+    std::this_thread::sleep_for(Connection::duration_);
+    if (!socket.SetState(Socket::CONNECTED)) {
+      errno = EINVAL;
+      return -1;
+    }
   } else {
     // TODO: implement non-blocking connection, keeping in mind, that |select()|
     //       or |epoll()| should somehow indicate this fact using pipes.
     // TODO: return EINPROGRESS, if the |connection_duration| is non-zero.
   }
 
-  if (connection_result == 0) {
+  if (Connection::result_ == 0) {
     return 0;
   } else {
-    errno = connection_result;
+    errno = Connection::result_;
     return -1;
   }
+}
+
+int listen(int sockfd, int backlog) {
+  Socket socket = Socket::Get(sockfd);
+  if (!socket.IsValid()) {
+    // We can't detect, if the |sockfd| is a valid descriptor at a system level,
+    // so we always indicate that it's just not a socket.
+    errno = ENOTSOCK;
+    return -1;
+  }
+
+  if (!socket.SetState(Socket::PASSIVE)) {
+    // Assume |errno| is already set by |Socket::SetState()|.
+    return -1;
+  }
+
+  return 0;
+}
+
+int setsockopt(int sockfd, int level, int optname, const void* optval,
+               socklen_t optlen) {
+  // TODO: implement this.
+  return 0;
 }
 
 int socket(int domain, int type, int protocol) {

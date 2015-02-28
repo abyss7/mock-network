@@ -26,6 +26,9 @@ using Mutex = std::mutex;
 template <class T>
 using Set = std::set<T>;
 
+template <class T>
+using SharedPtr = std::shared_ptr<T>;
+
 using UniqueLock = std::unique_lock<Mutex>;
 
 template <class U, class V>

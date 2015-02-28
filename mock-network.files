@@ -51,5 +51,5 @@ src/mock_network/functions.cc
 src/mock_network/functions.h
 src/mock_network/socket.h
 src/mock_network/socket.cc
-src/mock_network/connect.h
-src/mock_network/connect.cc
+src/mock_network/connection.h
+src/mock_network/connection.cc

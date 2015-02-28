@@ -2,6 +2,8 @@
 
 #include <base/aliases.h>
 
+#include <sys/socket.h>
+
 namespace mock_network {
 
 class Socket {
@@ -11,6 +13,8 @@ class Socket {
     IDLE,
     CONNECTING,
     CONNECTED,
+    BIND,
+    PASSIVE,
   };
 
   Socket() = default;
@@ -18,32 +22,38 @@ class Socket {
 
   static Socket Get(int fd);
 
-  inline void SetNonBlocking(bool value) { non_blocking_ = value; }
-  bool SetState(State state);
+  inline void SetNonBlocking(bool value) { details_->non_blocking = value; }
+  bool SetState(State state, const struct sockaddr* address = nullptr,
+                socklen_t size = -1);
 
-  inline bool IsValid() const { return is_valid_; }
-  inline bool IsNonBlocking() const { return non_blocking_; }
-  inline State GetState() const { return state_; }
+  inline bool IsValid() const { return details_->is_valid; }
+  inline bool IsNonBlocking() const { return details_->non_blocking; }
+  inline State GetState() const { return details_->state; }
   inline operator int() const {
     if (!IsValid()) {
       return -1;
     }
-    return pipe_[0];
+    return details_->pipe[0];
   }
 
   int Close();
 
  private:
-  // internals
-  bool is_valid_ = false;
-  int pipe_[2];
+  struct Details {
+    // internals
+    bool is_valid = false;
+    int pipe[2];
 
-  // socket params
-  int domain_, type_, protocol_;
-  State state_ = IDLE;  // TODO: handle |state_| atomically.
+    // socket params
+    int domain, type, protocol;
+    State state = IDLE;  // TODO: handle |state_| atomically.
+    struct sockaddr_storage address;
 
-  // file descriptor params
-  bool non_blocking_ = false;
+    // file descriptor params
+    bool non_blocking = false;
+  };
+
+  SharedPtr<Details> details_{new Details};
 };
 
 }  // namespace mock_network
